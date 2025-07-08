@@ -23,9 +23,13 @@ try:
     price_list = read_csv_with_encoding('tiamed_price_list.csv', 'LabTest Name')
     reference_list = read_csv_with_encoding('tiamed_test_referance_point.csv', 'Test Name')
 
+    # Clean data by stripping whitespace
+    price_list['LabTest Name'] = price_list['LabTest Name'].str.strip()
+    reference_list['Test Name'] = reference_list['Test Name'].str.strip()
+    
     # Get unique test names from both files (case-sensitive)
-    price_tests = set(price_list['LabTest Name'].dropna().apply(str.strip).unique())
-    reference_tests = set(reference_list['Test Name'].dropna().apply(str.strip).unique())
+    price_tests = set(price_list['LabTest Name'].dropna().unique())
+    reference_tests = set(reference_list['Test Name'].dropna().unique())
 
     # Find exact matches (case-sensitive)
     exact_matches = price_tests & reference_tests
@@ -67,13 +71,38 @@ try:
     pd.DataFrame({'Price List Name': case_mismatches.keys(), 
                  'Reference Name': case_mismatches.values()}).to_csv('case_mismatches.csv', index=False)
     pd.DataFrame({'Tests Only in Price List': sorted(tests_only_in_price)}).to_csv('tests_only_in_price_list.csv', index=False)
-    pd.DataFrame({'Tests Only in Reference': sorted(tests_only_in_reference)}).to_csv('tests_only_in_reference.csv', index=False)
+    
+    # Create DataFrame for tests only in reference with Category first, then Test Name
+    if 'Category' in reference_list.columns:
+        # Create DataFrame with test names
+        tests_only_in_ref_df = pd.DataFrame({'Test Name': sorted(tests_only_in_reference)})
+        
+        # Get Category and Test Name from reference list
+        reference_info = reference_list[['Test Name', 'Category']].drop_duplicates(subset=['Test Name'])
+        
+        # Merge to get categories
+        tests_only_in_ref_with_categories = tests_only_in_ref_df.merge(
+            reference_info,
+            on='Test Name',
+            how='left'
+        )
+        
+        # Reorder columns to have Category first
+        tests_only_in_ref_with_categories = tests_only_in_ref_with_categories[['Category', 'Test Name']]
+        
+        # Save to CSV with Category first, then Test Name
+        tests_only_in_ref_with_categories.to_csv('tests_only_in_reference.csv', index=False)
+    else:
+        # Fallback if Category column doesn't exist
+        pd.DataFrame({'Test Name': sorted(tests_only_in_reference)}).to_csv(
+            'tests_only_in_reference.csv', index=False)
+        print("Warning: 'Category' column not found in reference file. Saved with only Test Name.")
 
     print("\nResults saved to:")
     print("- exact_matches.csv")
     print("- case_mismatches.csv")
     print("- tests_only_in_price_list.csv")
-    print("- tests_only_in_reference.csv")
+    print("- tests_only_in_reference.csv (with Category first, then Test Name)")
 
 except Exception as e:
     print(f"\nError: {str(e)}")

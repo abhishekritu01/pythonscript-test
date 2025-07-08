@@ -4,7 +4,7 @@ def read_csv_with_encoding(file_path, column_name):
     encodings = ['utf-8', 'latin1', 'cp1252', 'iso-8859-1']
     
     for encoding in encodings:
-        try:
+        try:         
             df = pd.read_csv(file_path, encoding=encoding)
             if column_name in df.columns:
                 return df
@@ -20,8 +20,9 @@ def read_csv_with_encoding(file_path, column_name):
 
 try:
     # Read both CSV files with encoding fallback
-    price_list = read_csv_with_encoding('tiamed_price_list.csv', 'LabTest Name')
-    reference_list = read_csv_with_encoding('tiamed_test_referance_point.csv', 'Test Name')
+    price_list = read_csv_with_encoding('tiamed_price_list-2.csv', 'LabTest Name')
+    reference_list = read_csv_with_encoding('tiamed_test_referance_point-2.csv', 'Test Name')
+
 
     # Get unique test names from both files
     price_tests = set(price_list['LabTest Name'].dropna().unique())
@@ -58,3 +59,4 @@ except Exception as e:
     print("2. Verify the column names in your CSV files match 'LabTest Name' and 'Test Name'")
     print("3. Try opening the CSV files in a text editor to check their encoding")
     print("4. If you know the correct encoding, add it to the encodings list in the script")
+
